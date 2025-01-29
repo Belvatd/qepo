@@ -13,23 +13,36 @@ import {
 } from "~/components/ui/card";
 import { Form } from "~/components/ui/form";
 import { RegisterFormInner } from "../components/RegisterFormInner";
-import { registerFormSchema, type RegisterFormSchema } from "../forms/register";
+import { type RegisterFormSchema, registerFormSchema } from "../forms/register";
+import { api } from "~/utils/api";
+import { toast } from "sonner";
 
 const RegisterPage = () => {
   const form = useForm<RegisterFormSchema>({
     resolver: zodResolver(registerFormSchema),
-    mode: "all",
   });
 
-  const handleRegisterSubmit = (data: RegisterFormSchema) => {
-    console.log(data);
+  const { mutate: registerUser, isPending: registerUserIsPending } =
+    api.auth.register.useMutation({
+      onSuccess: () => {
+        toast("Akun kamu berhasil dibuat!");
+        form.setValue("email", "");
+        form.setValue("password", "");
+      },
+      onError: () => {
+        toast.error("Ada kesalahan terjadi, coba beberapa saat lagi");
+      },
+    });
+
+  const handleRegisterSubmit = (values: RegisterFormSchema) => {
+    registerUser(values);
   };
 
   return (
-    <PageContainer className="">
+    <PageContainer>
       <SectionContainer
         padded
-        className="flex min-h-[calc(100vh-144px)] flex-col justify-center"
+        className="flex min-h-[calc(100vh-144px)] w-full flex-col justify-center"
       >
         <Card className="w-full max-w-[480px] self-center">
           <CardHeader className="flex flex-col items-center justify-center">
@@ -40,9 +53,13 @@ const RegisterPage = () => {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <RegisterFormInner onRegisterSubmit={handleRegisterSubmit} />
+              <RegisterFormInner
+                isLoading={registerUserIsPending}
+                onRegisterSubmit={handleRegisterSubmit}
+              />
             </Form>
           </CardContent>
+
           <CardFooter className="flex flex-col gap-4">
             <div className="flex w-full items-center justify-between gap-x-4">
               <div className="h-[2px] w-full border-t-2" />
